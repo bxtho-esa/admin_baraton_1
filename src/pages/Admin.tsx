@@ -34,10 +34,18 @@ const Admin = () => {
   // const [uploading, setUploading] = useState(false); // Unused
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { admin, loading, logout, isAuthenticated } = useAdminAuth();
+  const { admin, loading, logout, isAuthenticated, login } = useAdminAuth();
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
-  // Handle image upload for new rooms (Cloudinary via backend)
-  // const handleImageUpload = ... // Unused
+
+  // Custom login handler to trigger re-render after login
+  const handleLogin = async (email: string, password: string) => {
+    const result = await login(email, password);
+    if (result.success) {
+      setJustLoggedIn(true);
+    }
+    return result;
+  };
 
   // Fetch rooms with images
   const { data: roomsRaw, isLoading: roomsLoading } = useQuery({
@@ -209,7 +217,12 @@ const Admin = () => {
 
   // Only pass roomData, not images, to mutations
   const handleCreateRoom = (roomData: any) => {
-    createRoomMutation.mutate({ roomData });
+    // Convert price_per_night from Ksh to Kobo for backend
+    const payload = {
+      ...roomData,
+      price_per_night: roomData.price_per_night ? Math.round(roomData.price_per_night * 2.1) : 0
+    };
+    createRoomMutation.mutate({ roomData: payload });
   };
 
   const handleUpdateRoom = (roomData: any) => {
@@ -217,15 +230,13 @@ const Admin = () => {
   };
 
   const handleCreateConferenceRoom = (roomData: any) => {
-    // Map frontend fields to backend model requirements
+    // Convert price_per_hour from Ksh to Kobo for backend
     const payload = {
       ...roomData,
-      // Conference model expects price_per_night, not price_per_hour
-      price_per_night: roomData.price_per_hour || 0,
+      price_per_night: roomData.price_per_hour ? Math.round(roomData.price_per_hour * 2.1) : 0,
       type: roomData.type || 'conference',
       name: roomData.name || '',
     };
-    // Remove price_per_hour if present
     delete payload.price_per_hour;
     createConferenceRoomMutation.mutate({ roomData: payload });
   };
@@ -282,8 +293,8 @@ const Admin = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <AdminLogin />;
+  if (!isAuthenticated && !justLoggedIn) {
+    return <AdminLogin login={handleLogin} />;
   }
 
   return (

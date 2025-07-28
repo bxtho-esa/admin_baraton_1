@@ -21,7 +21,7 @@ interface ConferenceRoom {
   id: string;
   name: string;
   type: string;
-  price_per_hour: number;
+  price_per_hour: number; // stored in Kobo, displayed in Ksh
   capacity: number;
   size_sqm: number | null;
   description: string | null;
@@ -42,7 +42,7 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
   const [formData, setFormData] = useState<Partial<ConferenceRoom>>({
     name: '',
     type: 'small_meeting_room',
-    price_per_hour: 0,
+    price_per_hour: 0, // Kobo
     capacity: 10,
     size_sqm: null,
     description: '',
@@ -58,7 +58,11 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
 
   useEffect(() => {
     if (room) {
-      setFormData(room);
+      // Convert price_per_hour from Kobo to Ksh for display
+      setFormData({
+        ...room,
+        price_per_hour: room.price_per_hour ? Math.round(room.price_per_hour / 2.1) : 0
+      });
       setImages(room.images || []);
     } else {
       setFormData({
@@ -231,13 +235,14 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
               </Select>
             </div>
             <div>
-              <Label htmlFor="price_per_hour">Price per Hour (₦)</Label>
+              <Label htmlFor="price_per_hour">Price per Hour (Ksh)</Label>
               <Input
                 id="price_per_hour"
                 type="number"
                 value={formData.price_per_hour || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, price_per_hour: parseInt(e.target.value) || 0 }))}
                 required
+                min={0}
               />
             </div>
           </div>

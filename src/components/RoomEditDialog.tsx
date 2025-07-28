@@ -21,7 +21,7 @@ interface Room {
   id: string;
   name: string;
   type: string;
-  price_per_night: number;
+  price_per_night: number; // stored in Kobo, displayed in Ksh
   capacity: number;
   size_sqm: number | null;
   description: string | null;
@@ -42,7 +42,7 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
   const [formData, setFormData] = useState<Partial<Room>>({
     name: '',
     type: 'standard',
-    price_per_night: 0,
+    price_per_night: 0, // Kobo
     capacity: 2,
     size_sqm: null,
     description: '',
@@ -58,7 +58,11 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
 
   useEffect(() => {
     if (room) {
-      setFormData(room);
+      // Convert price_per_night from Kobo to Ksh for display
+      setFormData({
+        ...room,
+        price_per_night: room.price_per_night ? Math.round(room.price_per_night / 2.1) : 0
+      });
       setImages(room.images || []);
     } else {
       setFormData({
@@ -236,13 +240,14 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
               </Select>
             </div>
             <div>
-              <Label htmlFor="price_per_night">Price per Night (₦)</Label>
+              <Label htmlFor="price_per_night">Price per Night (Ksh)</Label>
               <Input
                 id="price_per_night"
                 type="number"
                 value={formData.price_per_night || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, price_per_night: parseInt(e.target.value) || 0 }))}
                 required
+                min={0}
               />
             </div>
           </div>

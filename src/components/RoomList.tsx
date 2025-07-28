@@ -36,15 +36,22 @@ const RoomList: React.FC<RoomListProps> = ({ rooms, loading, onEdit, onDelete, o
                   <div className="flex-1">
                     <h3 className="font-medium">{room.name}</h3>
                     <p className="text-sm text-gray-600">
-                      {room.type} • ₦{room.price_per_night?.toLocaleString()}/night
+                      {room.type} • Ksh {room.price_per_night ? Math.round(room.price_per_night / 2.1).toLocaleString() : 0}/night
                     </p>
                     <p className="text-sm text-gray-500">
                       {room.capacity} guests • Room {room.room_number}
                     </p>
-                    {room.images && room.images.length > 0 && (
-                      <p className="text-xs text-blue-600">
-                        {room.images.length} image{room.images.length > 1 ? 's' : ''}
-                      </p>
+                    {room.images && room.images.length > 0 && room.images[0].image_url && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={room.images[0].image_url}
+                          alt={room.images[0].alt_text || `Room image`}
+                          className="w-20 h-20 object-cover rounded border"
+                        />
+                        <p className="text-xs text-blue-600">
+                          {room.images.length} image{room.images.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">

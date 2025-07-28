@@ -36,15 +36,22 @@ const ConferenceRoomList: React.FC<ConferenceRoomListProps> = ({ conferenceRooms
                   <div className="flex-1">
                     <h3 className="font-medium">{room.name}</h3>
                     <p className="text-sm text-gray-600">
-                      {room.type?.replace('_', ' ')} • ₦{room.price_per_hour?.toLocaleString()}/hour
+                      {room.type?.replace('_', ' ')} • Ksh {room.price_per_hour ? Math.round(room.price_per_hour / 2.1).toLocaleString() : 0}/hour
                     </p>
                     <p className="text-sm text-gray-500">
                       {room.capacity} capacity • Room {room.room_number}
                     </p>
-                    {room.images && room.images.length > 0 && (
-                      <p className="text-xs text-blue-600">
-                        {room.images.length} image{room.images.length > 1 ? 's' : ''}
-                      </p>
+                    {room.images && room.images.length > 0 && room.images[0].image_url && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={room.images[0].image_url}
+                          alt={room.images[0].alt_text || `Conference room image`}
+                          className="w-20 h-20 object-cover rounded border"
+                        />
+                        <p className="text-xs text-blue-600">
+                          {room.images.length} image{room.images.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">

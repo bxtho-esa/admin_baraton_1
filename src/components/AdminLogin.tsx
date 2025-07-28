@@ -7,20 +7,20 @@ import { Eye, EyeOff, Lock, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-const AdminLogin = () => {
+const AdminLogin = ({ login: customLogin }: { login?: (email: string, password: string) => Promise<any> }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAdminAuth();
+  const { login: defaultLogin } = useAdminAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const result = await login(email, password);
-    
+    const loginFn = customLogin || defaultLogin;
+    const result = await loginFn(email, password);
     if (result.success) {
       toast({
         title: "Welcome Admin",
@@ -33,7 +33,6 @@ const AdminLogin = () => {
         variant: "destructive",
       });
     }
-    
     setLoading(false);
   };
 
