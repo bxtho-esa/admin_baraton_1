@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '@/lib/axios';
+import { config } from '@/config/environment';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -42,7 +43,7 @@ const Admin = () => {
   const { data: roomsRaw, isLoading: roomsLoading } = useQuery({
     queryKey: ['admin-rooms'],
     queryFn: async () => {
-      const res = await axios.get('/api/lodgings');
+      const res = await api.get(`${config.backend.url}/lodgings`);
       return res.data;
     },
     enabled: isAuthenticated
@@ -53,7 +54,7 @@ const Admin = () => {
   const { data: conferenceRoomsRaw, isLoading: conferenceRoomsLoading } = useQuery({
     queryKey: ['admin-conference-rooms'],
     queryFn: async () => {
-      const res = await axios.get('/api/conferences');
+      const res = await api.get(`${config.backend.url}/conferences`);
       return res.data;
     },
     enabled: isAuthenticated
@@ -64,7 +65,7 @@ const Admin = () => {
   const { data: bookingsRaw } = useQuery({
     queryKey: ['admin-bookings'],
     queryFn: async () => {
-      const res = await axios.get('/api/bookings');
+      const res = await api.get(`${config.backend.url}/bookings`);
       return res.data;
     },
     enabled: isAuthenticated
@@ -75,7 +76,7 @@ const Admin = () => {
   const { data: analyticsRaw } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
-      const res = await axios.get('/api/analytics');
+      const res = await api.get(`${config.backend.url}/analytics`);
       return res.data;
     },
     enabled: isAuthenticated
@@ -85,7 +86,7 @@ const Admin = () => {
   // Room CRUD operations
   const createRoomMutation = useMutation({
     mutationFn: async ({ roomData }: { roomData: any }) => {
-      const res = await axios.post('/api/lodgings', roomData);
+      const res = await api.post(`${config.backend.url}/lodgings`, roomData);
       return res.data;
     },
     onSuccess: () => {
@@ -115,7 +116,7 @@ const Admin = () => {
 
   const updateRoomMutation = useMutation({
     mutationFn: async ({ roomData }: { roomData: any }) => {
-      const res = await axios.put(`/api/lodgings/${roomData.id}`, roomData);
+      const res = await api.put(`${config.backend.url}/lodgings/${roomData.id}`, roomData);
       return res.data;
     },
     onSuccess: () => {
@@ -139,7 +140,7 @@ const Admin = () => {
   // Delete room mutation
   const deleteRoomMutation = useMutation({
     mutationFn: async (roomId: string) => {
-      await axios.delete(`/api/lodgings/${roomId}`);
+      await api.delete(`${config.backend.url}/lodgings/${roomId}`);
       return roomId;
     },
     onSuccess: () => {
@@ -164,7 +165,7 @@ const Admin = () => {
   // Conference Room CRUD operations
   const createConferenceRoomMutation = useMutation({
     mutationFn: async ({ roomData }: { roomData: any }) => {
-      const res = await axios.post('/api/conferences', roomData);
+      const res = await api.post(`${config.backend.url}/conferences`, roomData);
       return res.data;
     },
     onSuccess: () => {
@@ -178,7 +179,7 @@ const Admin = () => {
 
   const updateConferenceRoomMutation = useMutation({
     mutationFn: async ({ roomData }: { roomData: any }) => {
-      const res = await axios.put(`/api/conferences/${roomData.id}`, roomData);
+      const res = await api.put(`${config.backend.url}/conferences/${roomData.id}`, roomData);
       return res.data;
     },
     onSuccess: () => {
@@ -194,7 +195,7 @@ const Admin = () => {
 
   const deleteConferenceRoomMutation = useMutation({
     mutationFn: async (roomId: string) => {
-      await axios.delete(`/api/conferences/${roomId}`);
+      await api.delete(`${config.backend.url}/conferences/${roomId}`);
       return roomId;
     },
     onSuccess: () => {
@@ -216,7 +217,17 @@ const Admin = () => {
   };
 
   const handleCreateConferenceRoom = (roomData: any) => {
-    createConferenceRoomMutation.mutate({ roomData });
+    // Map frontend fields to backend model requirements
+    const payload = {
+      ...roomData,
+      // Conference model expects price_per_night, not price_per_hour
+      price_per_night: roomData.price_per_hour || 0,
+      type: roomData.type || 'conference',
+      name: roomData.name || '',
+    };
+    // Remove price_per_hour if present
+    delete payload.price_per_hour;
+    createConferenceRoomMutation.mutate({ roomData: payload });
   };
 
   const handleUpdateConferenceRoom = (roomData: any) => {
@@ -334,7 +345,7 @@ const Admin = () => {
             setShowEditDialog(false);
             setEditingRoom(null);
           }}
-          onSave={handleUpdateRoom}
+          onSave={editingRoom ? handleUpdateRoom : handleCreateRoom}
         />
       )}
 

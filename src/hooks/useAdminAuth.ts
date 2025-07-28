@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { config } from '@/config/environment';
+import api from '@/lib/axios';
 import { logger } from '@/utils/logger';
 
 interface AdminUser {
@@ -19,12 +20,19 @@ export const useAdminAuth = () => {
   const checkAdminAuth = async () => {
     try {
       const adminData = localStorage.getItem('admin_user');
-      if (adminData) {
+      const token = localStorage.getItem('admin_token');
+      if (adminData && token) {
         setAdmin(JSON.parse(adminData));
+      } else {
+        setAdmin(null);
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('admin_token');
       }
     } catch (error) {
       // Clear invalid session data
       localStorage.removeItem('admin_user');
+      localStorage.removeItem('admin_token');
+      setAdmin(null);
       logger.warn('Invalid admin session data cleared');
     } finally {
       setLoading(false);
@@ -37,45 +45,24 @@ export const useAdminAuth = () => {
       if (!email || !password) {
         throw new Error('Email and password are required');
       }
-
-      // Query admin users from Supabase
-      const { data: adminUsers, error } = await supabase
-        .from('admin_users')
-        .select('id, email, name, password_hash')
-        .eq('email', email.toLowerCase().trim())
-        .limit(1);
-
-      if (error) {
-        logger.error('Database error during admin authentication', error);
-        throw new Error('Authentication system error');
-      }
-
-      if (!adminUsers || adminUsers.length === 0) {
-        logger.warn('Admin login attempt with invalid email', { email });
+      // Query admin user from backend
+      const response = await api.post(`${config.backend.url}/auth/login`, { email, password });
+      if (response.status !== 200) throw new Error('Login failed');
+      const { token } = response.data;
+      if (!token) {
+        logger.warn('Admin login attempt with invalid credentials', { email });
         throw new Error('Invalid credentials');
       }
+      // Store token for future requests
+      localStorage.setItem('admin_token', token);
 
-      const adminUser = adminUsers[0];
-      
-      // For production, implement proper password hashing verification
-      // This is a simplified check for development
-      const isValidPassword = password === 'admin123' && email === 'admin@baraton.com';
-      
-      if (!isValidPassword) {
-        logger.warn('Admin login attempt with invalid password', { email });
-        throw new Error('Invalid credentials');
-      }
-
-      const sessionData = {
-        id: adminUser.id,
-        email: adminUser.email,
-        name: adminUser.name
-      };
-      
-      localStorage.setItem('admin_user', JSON.stringify(sessionData));
-      setAdmin(sessionData);
+      // Fetch admin details using the token (header is set by interceptor)
+      const detailsRes = await api.get(`${config.backend.url}/admin/me`);
+      const adminUser = detailsRes.data;
+      if (!adminUser) throw new Error('Failed to fetch admin details');
+      localStorage.setItem('admin_user', JSON.stringify(adminUser));
+      setAdmin(adminUser);
       logger.info('Admin login successful', { email: adminUser.email });
-      
       return { success: true };
     } catch (error: any) {
       logger.error('Admin login failed', { error: error.message });
@@ -86,6 +73,7 @@ export const useAdminAuth = () => {
   const logout = async () => {
     try {
       localStorage.removeItem('admin_user');
+      localStorage.removeItem('admin_token');
       setAdmin(null);
       logger.info('Admin logout successful');
     } catch (error) {
@@ -93,11 +81,12 @@ export const useAdminAuth = () => {
     }
   };
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
   return {
     admin,
     loading,
     login,
     logout,
-    isAuthenticated: !!admin
+    isAuthenticated: !!admin && !!(typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null)
   };
 };

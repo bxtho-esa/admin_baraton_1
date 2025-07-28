@@ -4,9 +4,13 @@ export const config = {
   isProduction: import.meta.env.PROD,
   
   // API configuration
-  supabase: {
-    url: 'https://uasjnnipbgwkbkcidllr.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhc2pubmlwYmd3a2JrY2lkbGxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2OTc0MzksImV4cCI6MjA2NDI3MzQzOX0.5_Ea3QqH7ZtgvJHvZAevsNsVgUQs6f2P_Mvyh-pcDKM'
+  backend: {
+    url: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api',
+  },
+  cloudinary: {
+    cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'your-cloud-name',
+    apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY || 'your-api-key',
+    apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET || 'your-api-secret',
   },
 
   // App configuration

@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Upload, Plus, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { config } from '@/config/environment';
+import api from '@/lib/axios';
 import { toast } from 'sonner';
 
 interface ConferenceRoomImage {
@@ -147,25 +148,14 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
           return null;
         }
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `room-images/${fileName}`;
-
-        const { data, error } = await supabase.storage
-          .from('room-images')
-          .upload(filePath, file);
-
-        if (error) {
-          toast.error(`Failed to upload ${file.name}: ${error.message}`);
-          return null;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from('room-images')
-          .getPublicUrl(filePath);
-
+        // Upload image to backend /upload endpoint
+        const formData = new FormData();
+        formData.append('image', file);
+        const uploadRes = await api.post(`${config.backend.url}/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return {
-          image_url: urlData.publicUrl,
+          image_url: uploadRes.data.url,
           alt_text: file.name.split('.')[0],
           display_order: images.length + index,
           is_primary: images.length === 0 && index === 0
