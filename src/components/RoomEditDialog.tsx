@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 // ...existing code...
@@ -21,7 +28,7 @@ interface Room {
   id: string;
   name: string;
   type: string;
-  occupancy: number;
+  occupancy: string;
   price: number;
   amenities: string[];
   image_urls: string[];
@@ -41,7 +48,7 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
     id: '',
     name: '',
     type: '',
-    occupancy: 2,
+    occupancy: '',
     price: 0,
     amenities: [],
     image_urls: [],
@@ -58,7 +65,7 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
     if (room) {
       setFormData({
         ...room,
-        occupancy: room.occupancy || 2,
+        occupancy: room.occupancy || '',
         price: room.price || 0,
         amenities: room.amenities || [],
         image_urls: room.image_urls || [],
@@ -71,7 +78,7 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
         id: '',
         name: '',
         type: '',
-        occupancy: 2,
+        occupancy: '',
         price: 0,
         amenities: [],
         image_urls: [],
@@ -222,27 +229,41 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
             </div>
             <div>
               <Label htmlFor="occupancy">Occupancy</Label>
-              <Input
-                id="occupancy"
-                type="number"
+              <Select
                 value={formData.occupancy || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, occupancy: parseInt(e.target.value) || 0 }))}
+                onValueChange={(value: string) => setFormData(prev => ({ ...prev, occupancy: value }))}
                 required
-                min={1}
-              />
+              >
+                <SelectTrigger id="occupancy" className="w-full">
+                  <SelectValue placeholder="Select occupancy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Single">Single</SelectItem>
+                  <SelectItem value="Double">Double</SelectItem>
+                  <SelectItem value="3-9 yrs">3-9 yrs</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Room Type</Label>
-              <Input
-                id="type"
+              <Select
                 value={formData.type || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                placeholder="Enter room type manually"
+                onValueChange={(value: string) => setFormData(prev => ({ ...prev, type: value }))}
                 required
-              />
+              >
+                <SelectTrigger id="type" className="w-full">
+                  <SelectValue placeholder="Select room type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Twin Room">Twin Room</SelectItem>
+                  <SelectItem value="Deluxe">Deluxe</SelectItem>
+                  <SelectItem value="VIP Suite">VIP Suite</SelectItem>
+                  <SelectItem value="Children 3-9 yrs">Children 3-9 yrs</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="price">Price per Night (Ksh)</Label>

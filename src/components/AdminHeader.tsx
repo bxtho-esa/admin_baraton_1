@@ -12,6 +12,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ admin, onLogout }) => (
     <div className="container mx-auto px-4 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
+          <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
           <h1 className="text-2xl font-bold text-hotel-navy">Admin Dashboard</h1>
         </div>
         <div className="flex items-center gap-4">
