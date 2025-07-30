@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// ...existing code...
 import { X, Upload, Plus, Trash2 } from 'lucide-react';
 import { config } from '@/config/environment';
 import api from '@/lib/axios';
@@ -21,15 +21,13 @@ interface Room {
   id: string;
   name: string;
   type: string;
-  price_per_night: number; // stored in Kobo, displayed in Ksh
-  capacity: number;
-  size_sqm: number | null;
-  description: string | null;
+  occupancy: number;
+  price: number;
   amenities: string[];
-  image_url: string | null;
-  room_number: string | null;
-  is_available: boolean;
-  images?: RoomImage[];
+  image_urls: string[];
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface RoomEditDialogProps {
@@ -40,16 +38,16 @@ interface RoomEditDialogProps {
 
 const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }) => {
   const [formData, setFormData] = useState<Partial<Room>>({
+    id: '',
     name: '',
-    type: 'standard',
-    price_per_night: 0, // Kobo
-    capacity: 2,
-    size_sqm: null,
-    description: '',
+    type: '',
+    occupancy: 2,
+    price: 0,
     amenities: [],
-    image_url: '',
-    room_number: '',
-    is_available: true
+    image_urls: [],
+    description: '',
+    created_at: '',
+    updated_at: ''
   });
 
   const [images, setImages] = useState<RoomImage[]>([]);
@@ -58,32 +56,45 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
 
   useEffect(() => {
     if (room) {
-      // Convert price_per_night from Kobo to Ksh for display
       setFormData({
         ...room,
-        price_per_night: room.price_per_night ? Math.round(room.price_per_night / 2.1) : 0
+        occupancy: room.occupancy || 2,
+        price: room.price || 0,
+        amenities: room.amenities || [],
+        image_urls: room.image_urls || [],
+        description: room.description || '',
+        created_at: room.created_at || '',
+        updated_at: room.updated_at || ''
       });
-      setImages(room.images || []);
     } else {
       setFormData({
+        id: '',
         name: '',
-        type: 'standard',
-        price_per_night: 0,
-        capacity: 2,
-        size_sqm: null,
-        description: '',
+        type: '',
+        occupancy: 2,
+        price: 0,
         amenities: [],
-        image_url: '',
-        room_number: '',
-        is_available: true
+        image_urls: [],
+        description: '',
+        created_at: '',
+        updated_at: ''
       });
-      setImages([]);
     }
+    setImages([]);
   }, [room]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData, images);
+    // Merge images into image_urls
+    const imageUrls = images.map(img => img.image_url).filter(Boolean);
+    const now = new Date().toISOString();
+    const dataToSave = {
+      ...formData,
+      image_urls: imageUrls,
+      created_at: formData.created_at || now,
+      updated_at: now
+    };
+    onSave(dataToSave, images);
   };
 
   const addAmenity = () => {
@@ -210,11 +221,14 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
               />
             </div>
             <div>
-              <Label htmlFor="room_number">Room Number</Label>
+              <Label htmlFor="occupancy">Occupancy</Label>
               <Input
-                id="room_number"
-                value={formData.room_number || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, room_number: e.target.value }))}
+                id="occupancy"
+                type="number"
+                value={formData.occupancy || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, occupancy: parseInt(e.target.value) || 0 }))}
+                required
+                min={1}
               />
             </div>
           </div>
@@ -222,57 +236,28 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Room Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="standard">Standard Rooms</SelectItem>
-                  <SelectItem value="superior">Superior Rooms</SelectItem>
-                  <SelectItem value="deluxe">Deluxe Rooms</SelectItem>
-                  <SelectItem value="executive_suite">Executive Rooms</SelectItem>
-                  <SelectItem value="suite">Suites</SelectItem>
-                  <SelectItem value="presidential_suite">Presidential Suite</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="type"
+                value={formData.type || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                placeholder="Enter room type manually"
+                required
+              />
             </div>
             <div>
-              <Label htmlFor="price_per_night">Price per Night (Ksh)</Label>
+              <Label htmlFor="price">Price per Night (Ksh)</Label>
               <Input
-                id="price_per_night"
+                id="price"
                 type="number"
-                value={formData.price_per_night || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, price_per_night: parseInt(e.target.value) || 0 }))}
+                value={formData.price || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
                 required
                 min={0}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="capacity">Capacity</Label>
-              <Input
-                id="capacity"
-                type="number"
-                value={formData.capacity || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="size_sqm">Size (sqm)</Label>
-              <Input
-                id="size_sqm"
-                type="number"
-                value={formData.size_sqm || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, size_sqm: parseInt(e.target.value) || null }))}
-              />
-            </div>
-          </div>
+          {/* Removed size_sqm and capacity, now using occupancy only */}
 
           <div>
             <Label htmlFor="description">Description</Label>

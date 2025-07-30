@@ -15,17 +15,7 @@ import BookingList from '@/components/BookingList';
 import AnalyticsPanel from '@/components/AnalyticsPanel';
 
 const Admin = () => {
-  const [newRoom, setNewRoom] = useState({
-    name: '',
-    type: 'standard',
-    price_per_night: '',
-    capacity: '',
-    size_sqm: '',
-    description: '',
-    amenities: '',
-    image_url: '',
-    quantity: '1'
-  });
+  // No longer using newRoom state, handled by RoomEditDialog
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingConferenceRoom, setEditingConferenceRoom] = useState<any>(null);
@@ -101,17 +91,7 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-rooms'] });
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       toast({ title: "Room created successfully" });
-      setNewRoom({
-        name: '',
-        type: 'standard',
-        price_per_night: '',
-        capacity: '',
-        size_sqm: '',
-        description: '',
-        amenities: '',
-        image_url: '',
-        quantity: '1'
-      });
+      // Room creation handled by RoomEditDialog, no need to reset legacy newRoom state
     },
     onError: (error: any) => {
       toast({
@@ -217,27 +197,44 @@ const Admin = () => {
 
   // Only pass roomData, not images, to mutations
   const handleCreateRoom = (roomData: any) => {
-    // Convert price_per_night from Ksh to Kobo for backend
+    // Ensure all required fields are present and valid
     const payload = {
-      ...roomData,
-      price_per_night: roomData.price_per_night ? Math.round(roomData.price_per_night * 2.1) : 0
+      id: roomData.id || undefined,
+      name: roomData.name,
+      type: roomData.type,
+      occupancy: roomData.occupancy,
+      price: roomData.price,
+      amenities: roomData.amenities,
+      image_urls: roomData.image_urls,
+      description: roomData.description,
+      created_at: roomData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
     createRoomMutation.mutate({ roomData: payload });
   };
 
   const handleUpdateRoom = (roomData: any) => {
-    updateRoomMutation.mutate({ roomData });
+    const payload = {
+      ...roomData,
+      updated_at: new Date().toISOString(),
+    };
+    updateRoomMutation.mutate({ roomData: payload });
   };
 
   const handleCreateConferenceRoom = (roomData: any) => {
-    // Convert price_per_hour from Ksh to Kobo for backend
+    // Only send fields expected by backend and ensure all required fields are present
     const payload = {
-      ...roomData,
-      price_per_night: roomData.price_per_hour ? Math.round(roomData.price_per_hour * 2.1) : 0,
-      type: roomData.type || 'conference',
-      name: roomData.name || '',
+      id: roomData.id || undefined,
+      name: roomData.name,
+      price: roomData.price,
+      size: roomData.size,
+      max_users: roomData.max_users,
+      amenities: roomData.amenities,
+      image_urls: roomData.image_urls,
+      description: roomData.description,
+      created_at: roomData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
-    delete payload.price_per_hour;
     createConferenceRoomMutation.mutate({ roomData: payload });
   };
 
@@ -343,7 +340,7 @@ const Admin = () => {
               totalRevenue={totalRevenue}
               totalBookings={totalBookings}
               totalRooms={rooms.length}
-              availableRooms={rooms.filter((r: any) => r.is_available).length}
+              availableRooms={rooms.length}
             />
           </TabsContent>
         </Tabs>

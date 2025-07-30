@@ -20,16 +20,14 @@ interface ConferenceRoomImage {
 interface ConferenceRoom {
   id: string;
   name: string;
-  type: string;
-  price_per_hour: number; // stored in Kobo, displayed in Ksh
-  capacity: number;
-  size_sqm: number | null;
-  description: string | null;
+  price: number;
+  size: number;
+  max_users: number;
   amenities: string[];
-  image_url: string | null;
-  room_number: string | null;
-  is_available: boolean;
-  images?: ConferenceRoomImage[];
+  image_urls: string[];
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ConferenceRoomEditDialogProps {
@@ -40,16 +38,16 @@ interface ConferenceRoomEditDialogProps {
 
 const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ room, onClose, onSave }) => {
   const [formData, setFormData] = useState<Partial<ConferenceRoom>>({
+    id: '',
     name: '',
-    type: 'small_meeting_room',
-    price_per_hour: 0, // Kobo
-    capacity: 10,
-    size_sqm: null,
-    description: '',
+    price: 0,
+    size: 0,
+    max_users: 1,
     amenities: [],
-    image_url: '',
-    room_number: '',
-    is_available: true
+    image_urls: [],
+    description: '',
+    created_at: '',
+    updated_at: ''
   });
 
   const [images, setImages] = useState<ConferenceRoomImage[]>([]);
@@ -58,32 +56,53 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
 
   useEffect(() => {
     if (room) {
-      // Convert price_per_hour from Kobo to Ksh for display
       setFormData({
         ...room,
-        price_per_hour: room.price_per_hour ? Math.round(room.price_per_hour / 2.1) : 0
+        price: room.price || 0,
+        size: room.size || 0,
+        max_users: room.max_users || 1,
+        amenities: room.amenities || [],
+        image_urls: room.image_urls || [],
+        description: room.description || '',
+        created_at: room.created_at || '',
+        updated_at: room.updated_at || ''
       });
-      setImages(room.images || []);
     } else {
       setFormData({
+        id: '',
         name: '',
-        type: 'small_meeting_room',
-        price_per_hour: 0,
-        capacity: 10,
-        size_sqm: null,
-        description: '',
+        price: 0,
+        size: 0,
+        max_users: 1,
         amenities: [],
-        image_url: '',
-        room_number: '',
-        is_available: true
+        image_urls: [],
+        description: '',
+        created_at: '',
+        updated_at: ''
       });
-      setImages([]);
     }
+    setImages([]);
   }, [room]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData, images);
+    // Merge images into image_urls
+    const imageUrls = images.map(img => img.image_url).filter(Boolean);
+    const now = new Date().toISOString();
+    // Only send fields expected by backend
+    const dataToSave: Partial<ConferenceRoom> = {
+      id: formData.id,
+      name: formData.name,
+      price: typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price,
+      size: typeof formData.size === 'string' ? parseFloat(formData.size) : formData.size,
+      max_users: typeof formData.max_users === 'string' ? parseInt(formData.max_users) : formData.max_users,
+      amenities: formData.amenities || [],
+      image_urls: imageUrls,
+      description: formData.description || '',
+      created_at: formData.created_at || now,
+      updated_at: now
+    };
+    onSave(dataToSave, images);
   };
 
   const addAmenity = () => {
@@ -105,7 +124,7 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
 
   const addImage = () => {
     const newImage: ConferenceRoomImage = {
-      image_url: '',
+      image_url: '', // This line remains unchanged
       alt_text: '',
       display_order: images.length,
       is_primary: images.length === 0
@@ -206,68 +225,44 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
               />
             </div>
             <div>
-              <Label htmlFor="room_number">Room Number</Label>
+              <Label htmlFor="max_users">Max Users</Label>
               <Input
-                id="room_number"
-                value={formData.room_number || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, room_number: e.target.value }))}
+                id="max_users"
+                type="number"
+                value={formData.max_users || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, max_users: parseInt(e.target.value) || 1 }))}
+                required
+                min={1}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="type">Conference Room Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="small_meeting_room">Small Meeting Room</SelectItem>
-                  <SelectItem value="large_conference_hall">Large Conference Hall</SelectItem>
-                  <SelectItem value="boardroom">Boardroom</SelectItem>
-                  <SelectItem value="training_room">Training Room</SelectItem>
-                  <SelectItem value="seminar_hall">Seminar Hall</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="size">Room Size (sqm)</Label>
+              <Input
+                id="size"
+                type="number"
+                value={formData.size || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, size: parseFloat(e.target.value) || 0 }))}
+                required
+                min={0}
+              />
             </div>
             <div>
-              <Label htmlFor="price_per_hour">Price per Hour (Ksh)</Label>
+              <Label htmlFor="price">Price per Hour (Ksh)</Label>
               <Input
-                id="price_per_hour"
+                id="price"
                 type="number"
-                value={formData.price_per_hour || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, price_per_hour: parseInt(e.target.value) || 0 }))}
+                value={formData.price || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
                 required
                 min={0}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="capacity">Capacity</Label>
-              <Input
-                id="capacity"
-                type="number"
-                value={formData.capacity || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="size_sqm">Size (sqm)</Label>
-              <Input
-                id="size_sqm"
-                type="number"
-                value={formData.size_sqm || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, size_sqm: parseInt(e.target.value) || null }))}
-              />
-            </div>
-          </div>
+          {/* Removed size_sqm and capacity, now using occupancy only */}
 
           <div>
             <Label htmlFor="description">Description</Label>
@@ -423,7 +418,7 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={uploading} aria-disabled={uploading}>
               {room ? 'Update Conference Room' : 'Create Conference Room'}
             </Button>
           </div>
