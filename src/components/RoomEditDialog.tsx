@@ -195,7 +195,7 @@ const RoomEditDialog: React.FC<RoomEditDialogProps> = ({ room, onClose, onSave }
         toast.success(`Successfully uploaded ${validImages.length} image(s)`);
       }
     } catch (error) {
-      console.error('Error uploading images:', error);
+      // removed log
       toast.error('Failed to upload images');
     } finally {
       setUploading(false);

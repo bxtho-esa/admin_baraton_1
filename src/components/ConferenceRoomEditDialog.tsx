@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { X, Upload, Plus, Trash2 } from 'lucide-react';
 import { config } from '@/config/environment';
 import api from '@/lib/axios';
@@ -193,7 +193,7 @@ const ConferenceRoomEditDialog: React.FC<ConferenceRoomEditDialogProps> = ({ roo
         toast.success(`Successfully uploaded ${validImages.length} image(s)`);
       }
     } catch (error) {
-      console.error('Error uploading images:', error);
+      // removed log
       toast.error('Failed to upload images');
     } finally {
       setUploading(false);

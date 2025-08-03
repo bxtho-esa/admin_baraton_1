@@ -27,10 +27,10 @@ const BookingList: React.FC<BookingListProps> = ({ bookings }) => {
         fetch(`${backendUrl}/lodgings/${id}`)
           .then(res => res.json())
           .then(data => {
-            console.log('Fetched lodging', id, data);
+            // removed log
             setLodgingDetails(prev => ({ ...prev, [id]: data }));
           })
-          .catch((err) => { console.log('Lodging fetch error', id, err); });
+          .catch((err) => { });
       }
     });
     // Fetch all missing conference details
@@ -39,10 +39,10 @@ const BookingList: React.FC<BookingListProps> = ({ bookings }) => {
         fetch(`${backendUrl}/conferences/${id}`)
           .then(res => res.json())
           .then(data => {
-            console.log('Fetched conference', id, data);
+            // removed log
             setConferenceDetails(prev => ({ ...prev, [id]: data }));
           })
-          .catch((err) => { console.log('Conference fetch error', id, err); });
+          .catch((err) => { });
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,11 +62,7 @@ const BookingList: React.FC<BookingListProps> = ({ bookings }) => {
     // Lodging or conference details
     const lodging = booking.lodging_id ? lodgingDetails[booking.lodging_id] : null;
     const conference = booking.conference_id ? conferenceDetails[booking.conference_id] : null;
-    console.log('Rendering booking', booking.id, {
-      lodging,
-      conference,
-      booking
-    });
+    // removed log
 
     return (
       <div key={booking.id} className="border rounded-lg p-4">
