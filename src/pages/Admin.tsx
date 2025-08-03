@@ -12,7 +12,7 @@ import AdminHeader from '@/components/AdminHeader';
 import RoomList from '@/components/RoomList';
 import ConferenceRoomList from '@/components/ConferenceRoomList';
 import BookingList from '@/components/BookingList';
-import AnalyticsPanel from '@/components/AnalyticsPanel';
+
 
 const Admin = () => {
   // No longer using newRoom state, handled by RoomEditDialog
@@ -70,16 +70,7 @@ const Admin = () => {
   });
   const bookings = Array.isArray(bookingsRaw) ? bookingsRaw : [];
 
-  // Fetch analytics
-  const { data: analyticsRaw } = useQuery({
-    queryKey: ['admin-analytics'],
-    queryFn: async () => {
-      const res = await api.get(`${config.backend.url}/analytics`);
-      return res.data;
-    },
-    enabled: isAuthenticated
-  });
-  const analytics = Array.isArray(analyticsRaw) ? analyticsRaw : [];
+
 
   // Room CRUD operations
   const createRoomMutation = useMutation({
@@ -276,8 +267,7 @@ const Admin = () => {
     }
   };
 
-  const totalRevenue = analytics.reduce((sum: number, item: any) => sum + (item.total_revenue || 0), 0);
-  const totalBookings = analytics.reduce((sum: number, item: any) => sum + (item.total_bookings || 0), 0);
+
 
   if (loading) {
     return (
@@ -303,7 +293,7 @@ const Admin = () => {
             <TabsTrigger value="rooms">Room Management</TabsTrigger>
             <TabsTrigger value="conference">Conference Rooms</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="rooms">
@@ -334,15 +324,7 @@ const Admin = () => {
             <BookingList bookings={bookings} />
           </TabsContent>
 
-          <TabsContent value="analytics">
-            <AnalyticsPanel
-              analytics={analytics || []}
-              totalRevenue={totalRevenue}
-              totalBookings={totalBookings}
-              totalRooms={rooms.length}
-              availableRooms={rooms.length}
-            />
-          </TabsContent>
+
         </Tabs>
       </div>
 
