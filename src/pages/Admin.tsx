@@ -60,15 +60,29 @@ const Admin = () => {
   const conferenceRooms = Array.isArray(conferenceRoomsRaw) ? conferenceRoomsRaw : [];
 
   // Fetch bookings with room details
-  const { data: bookingsRaw } = useQuery({
-    queryKey: ['admin-bookings'],
-    queryFn: async () => {
-      const res = await api.get(`${config.backend.url}/bookings`);
-      return res.data;
-    },
-    enabled: isAuthenticated
-  });
-  const bookings = Array.isArray(bookingsRaw) ? bookingsRaw : [];
+  // Fetch lodging bookings
+const { data: lodgingBookingsRaw } = useQuery({
+  queryKey: ['admin-lodging-bookings'],
+  queryFn: async () => {
+    const res = await api.get(`${config.backend.url}/lodging-bookings`);
+    return res.data;
+  },
+  enabled: isAuthenticated
+});
+const lodgingBookings = Array.isArray(lodgingBookingsRaw) ? lodgingBookingsRaw : [];
+
+// Fetch conference bookings
+const { data: conferenceBookingsRaw } = useQuery({
+  queryKey: ['admin-conference-bookings'],
+  queryFn: async () => {
+    const res = await api.get(`${config.backend.url}/conference-bookings`);
+    return res.data;
+  },
+  enabled: isAuthenticated
+});
+const conferenceBookings = Array.isArray(conferenceBookingsRaw) ? conferenceBookingsRaw : [];
+
+
 
 
 
@@ -292,8 +306,8 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="rooms">Room Management</TabsTrigger>
             <TabsTrigger value="conference">Conference Rooms</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-
+            <TabsTrigger value="lodging-bookings">Lodging Bookings</TabsTrigger>
+            <TabsTrigger value="conference-bookings">Conference Bookings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="rooms">
@@ -320,11 +334,14 @@ const Admin = () => {
             />
           </TabsContent>
 
-          <TabsContent value="bookings">
-            <BookingList bookings={bookings} />
-          </TabsContent>
+              <TabsContent value="lodging-bookings">
+                <BookingList bookings={lodgingBookings} />
+              </TabsContent>
 
-
+              <TabsContent value="conference-bookings">
+                <BookingList bookings={conferenceBookings} />
+                
+              </TabsContent>
         </Tabs>
       </div>
 
