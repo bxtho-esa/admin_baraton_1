@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -7,6 +9,37 @@ interface BookingListProps {
 }
 
 const LodgingBookings: React.FC<BookingListProps> = ({ bookings }) => {
+  const [exportFrom, setExportFrom] = useState<string>('');
+  const [exportTo, setExportTo] = useState<string>('');
+
+  const handleExport = () => {
+    // Filter bookings by export range
+    const fromDate = exportFrom ? new Date(exportFrom).getTime() : 0;
+    const toDate = exportTo ? new Date(exportTo).getTime() : Date.now();
+    const exportBookings = filteredBookings.filter(b => {
+      const created = new Date(b.createdAt || b.created_at).getTime();
+      return created >= fromDate && created <= toDate;
+    });
+    if (exportBookings.length === 0) return alert('No bookings in selected range');
+    // Convert to worksheet
+    const ws = XLSX.utils.json_to_sheet(exportBookings);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'LodgingBookings');
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    saveAs(new Blob([buf], { type: 'application/octet-stream' }), `lodging_bookings_${exportFrom || 'all'}_${exportTo || 'all'}.xlsx`);
+  };
+  const [timeFilter, setTimeFilter] = useState<'all' | '3hrs' | '1day'>('all');
+
+  // Filter bookings by time
+  const now = Date.now();
+  const filteredBookings = bookings.filter(b => {
+    if (timeFilter === 'all') return true;
+    const created = new Date(b.createdAt || b.created_at).getTime();
+    if (timeFilter === '3hrs') return now - created <= 3 * 60 * 60 * 1000;
+    if (timeFilter === '1day') return now - created <= 24 * 60 * 60 * 1000;
+    return true;
+  });
+  console.log('LodgingBookings received:', bookings);
   const [lodgingDetails, setLodgingDetails] = useState<{ [id: number]: any }>({});
   const [modal, setModal] = useState<{ type: 'lodging', data: any } | null>(null);
   const [activeTab, setActiveTab] = useState<'confirmed' | 'pending'>('confirmed');
@@ -14,7 +47,7 @@ const LodgingBookings: React.FC<BookingListProps> = ({ bookings }) => {
   const backendUrl = (import.meta as any).env.VITE_BACKEND_URL?.replace(/\/$/, '');
 
   useEffect(() => {
-    const lodgingIds = Array.from(new Set(bookings.map(b => b.booking_id)));
+    const lodgingIds = Array.from(new Set(bookings.map(b => b.lodging_id)));
 
     lodgingIds.forEach(id => {
       if (!lodgingDetails[id]) {
@@ -32,7 +65,7 @@ const LodgingBookings: React.FC<BookingListProps> = ({ bookings }) => {
   const pending = bookings.filter(b => b.status !== 'confirmed');
 
   const renderBooking = (booking: any) => {
-    const lodging = lodgingDetails[booking.booking_id];
+  const lodging = lodgingDetails[booking.lodging_id];
 
     return (
       <div key={booking.id} className="border rounded-lg p-4">
@@ -93,7 +126,7 @@ const LodgingBookings: React.FC<BookingListProps> = ({ bookings }) => {
         <CardHeader>
           <CardTitle>Lodging Bookings</CardTitle>
         </CardHeader>
-        <div className="flex gap-4 px-6 pt-4">
+        <div className="flex flex-wrap gap-4 px-6 pt-4 items-center">
           <button
             className={`px-4 py-2 rounded-t ${activeTab === 'confirmed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
             onClick={() => setActiveTab('confirmed')}
@@ -106,17 +139,33 @@ const LodgingBookings: React.FC<BookingListProps> = ({ bookings }) => {
           >
             Pending
           </button>
+          <select
+            className="ml-4 px-2 py-1 border rounded"
+            value={timeFilter}
+            onChange={e => setTimeFilter(e.target.value as any)}
+          >
+            <option value="all">All</option>
+            <option value="3hrs">Last 3 hours</option>
+            <option value="1day">Last 1 day</option>
+          </select>
+          <div className="flex items-center gap-2 ml-4">
+            <label>From:</label>
+            <input type="datetime-local" value={exportFrom} onChange={e => setExportFrom(e.target.value)} className="border rounded px-2 py-1" />
+            <label>To:</label>
+            <input type="datetime-local" value={exportTo} onChange={e => setExportTo(e.target.value)} className="border rounded px-2 py-1" />
+            <button onClick={handleExport} className="bg-green-600 text-white px-3 py-1 rounded">Export</button>
+          </div>
         </div>
         <CardContent>
-          {bookings && bookings.length > 0 ? (
+          {filteredBookings && filteredBookings.length > 0 ? (
             <>
               {activeTab === 'confirmed' ? (
                 <div className="space-y-4">
-                  {confirmed.length > 0 ? confirmed.map(renderBooking) : <div className="text-gray-500">No confirmed bookings.</div>}
+                  {filteredBookings.filter(b => b.status === 'confirmed').length > 0 ? filteredBookings.filter(b => b.status === 'confirmed').map(renderBooking) : <div className="text-gray-500">No confirmed bookings.</div>}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pending.length > 0 ? pending.map(renderBooking) : <div className="text-gray-500">No pending bookings.</div>}
+                  {filteredBookings.filter(b => b.status !== 'confirmed').length > 0 ? filteredBookings.filter(b => b.status !== 'confirmed').map(renderBooking) : <div className="text-gray-500">No pending bookings.</div>}
                 </div>
               )}
             </>

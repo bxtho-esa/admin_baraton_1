@@ -11,8 +11,8 @@ import ConferenceRoomEditDialog from '@/components/ConferenceRoomEditDialog';
 import AdminHeader from '@/components/AdminHeader';
 import RoomList from '@/components/RoomList';
 import ConferenceRoomList from '@/components/ConferenceRoomList';
-import BookingList from '@/components/BookingList';
-
+import LodgingBookings from '@/components/LodgingBookings';
+import ConferenceBookings from '@/components/ConferenceBookings';
 
 const Admin = () => {
   // No longer using newRoom state, handled by RoomEditDialog
@@ -302,13 +302,21 @@ const conferenceBookings = Array.isArray(conferenceBookingsRaw) ? conferenceBook
     <div className="min-h-screen bg-gray-50">
       <AdminHeader admin={admin} onLogout={logout} />
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="rooms" className="space-y-6">
+        <Tabs defaultValue="lodging-bookings" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="rooms">Room Management</TabsTrigger>
-            <TabsTrigger value="conference">Conference Rooms</TabsTrigger>
             <TabsTrigger value="lodging-bookings">Lodging Bookings</TabsTrigger>
             <TabsTrigger value="conference-bookings">Conference Bookings</TabsTrigger>
+            <TabsTrigger value="rooms">Room Management</TabsTrigger>
+            <TabsTrigger value="conference">Conference Rooms</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="lodging-bookings">
+            <LodgingBookings bookings={lodgingBookings} />
+          </TabsContent>
+
+          <TabsContent value="conference-bookings">
+            <ConferenceBookings bookings={conferenceBookings} />
+          </TabsContent>
 
           <TabsContent value="rooms">
             <RoomList
@@ -333,15 +341,6 @@ const conferenceBookings = Array.isArray(conferenceBookingsRaw) ? conferenceBook
               deleteRoomPending={deleteConferenceRoomMutation.isPending}
             />
           </TabsContent>
-
-              <TabsContent value="lodging-bookings">
-                <BookingList bookings={lodgingBookings} />
-              </TabsContent>
-
-              <TabsContent value="conference-bookings">
-                <BookingList bookings={conferenceBookings} />
-                
-              </TabsContent>
         </Tabs>
       </div>
 
